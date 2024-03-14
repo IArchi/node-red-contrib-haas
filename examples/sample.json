@@ -1,0 +1,252 @@
+[
+    {
+        "id": "dbd6637a1b70d5b0",
+        "type": "tab",
+        "label": "Flow 1",
+        "disabled": false,
+        "info": "",
+        "env": []
+    },
+    {
+        "id": "fc47db14b31a9f9c",
+        "type": "inject",
+        "z": "dbd6637a1b70d5b0",
+        "name": "?Q100",
+        "props": [
+            {
+                "p": "payload"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": false,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "?Q100",
+        "payloadType": "str",
+        "x": 210,
+        "y": 240,
+        "wires": [
+            [
+                "174a8a3651809ff7"
+            ]
+        ]
+    },
+    {
+        "id": "174a8a3651809ff7",
+        "type": "haas-command",
+        "z": "dbd6637a1b70d5b0",
+        "name": "",
+        "address": "host",
+        "addresstype": "flow",
+        "port": "8080",
+        "porttype": "num",
+        "timeOut": 1500,
+        "openTries": 1,
+        "x": 380,
+        "y": 240,
+        "wires": [
+            [
+                "90040d2f39cc6006"
+            ],
+            [
+                "91005b7dcf8b15a3"
+            ]
+        ]
+    },
+    {
+        "id": "90040d2f39cc6006",
+        "type": "debug",
+        "z": "dbd6637a1b70d5b0",
+        "name": "Response",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 580,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "91005b7dcf8b15a3",
+        "type": "debug",
+        "z": "dbd6637a1b70d5b0",
+        "name": "Error",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 570,
+        "y": 280,
+        "wires": []
+    },
+    {
+        "id": "b4336bf18bf1deaf",
+        "type": "inject",
+        "z": "dbd6637a1b70d5b0",
+        "name": "Init",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": 0.1,
+        "topic": "",
+        "payload": "",
+        "payloadType": "date",
+        "x": 210,
+        "y": 80,
+        "wires": [
+            [
+                "c4f59a9f98afb594",
+                "70d6b594822d0f48",
+                "42a7ddca02a718c8"
+            ]
+        ]
+    },
+    {
+        "id": "c4f59a9f98afb594",
+        "type": "change",
+        "z": "dbd6637a1b70d5b0",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "host",
+                "pt": "flow",
+                "to": "127.0.0.2",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 380,
+        "y": 40,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "fcdafee7e744090f",
+        "type": "haas-dprint",
+        "z": "dbd6637a1b70d5b0",
+        "name": "",
+        "address": "host_dprint",
+        "addresstype": "flow",
+        "port": "port_dprint",
+        "porttype": "flow",
+        "timeOut": 20000,
+        "x": 390,
+        "y": 380,
+        "wires": [
+            [
+                "d26e6e67a3183298"
+            ],
+            [
+                "90c7633d460f0933"
+            ]
+        ]
+    },
+    {
+        "id": "d26e6e67a3183298",
+        "type": "debug",
+        "z": "dbd6637a1b70d5b0",
+        "name": "Logs",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 570,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "90c7633d460f0933",
+        "type": "debug",
+        "z": "dbd6637a1b70d5b0",
+        "name": "Error",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 570,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "70d6b594822d0f48",
+        "type": "change",
+        "z": "dbd6637a1b70d5b0",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "host_dprint",
+                "pt": "flow",
+                "to": "127.0.0.1",
+                "tot": "str"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 400,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "42a7ddca02a718c8",
+        "type": "change",
+        "z": "dbd6637a1b70d5b0",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "port_dprint",
+                "pt": "flow",
+                "to": "8080",
+                "tot": "num"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 400,
+        "y": 120,
+        "wires": [
+            []
+        ]
+    }
+]
