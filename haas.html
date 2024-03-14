@@ -1,0 +1,130 @@
+<script type="text/javascript">
+
+    RED.nodes.registerType('haas-command', {
+        category: 'network',
+        color: '#cddc39',
+        defaults: {
+            name: { value: '' },
+            address: { value: '127.0.0.1', validate: RED.validators.typedInput('addresstype', false) },
+            addresstype: { value: 'str' },
+            port: { value: 8081, validate: RED.validators.typedInput('porttype', false) },
+            porttype: { value: 'num' },
+            timeOut: { value: 1500 },
+            openTries: { value: 1 },
+        },
+        inputs: 1,
+        outputs: 2,
+        icon: 'read.png',
+        label: function () {
+            return this.name || 'Haas command';
+        },
+        inputLabels: 'Command',
+        outputLabels: ['Response', 'Error'],
+        oneditprepare: function() {
+          $('#node-input-address').typedInput({
+              default: 'str',
+              typeField: $('#node-input-addresstype'),
+              types: ['flow','global','str']
+          });
+          $('#node-input-port').typedInput({
+              default: 'num',
+              typeField: $('#node-input-porttype'),
+              types: ['flow','global','num']
+          });
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="haas-command">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-input-name" placeholder="Name" />
+    </div>
+    <div class="form-row">
+      <label for="node-input-address"><i class="fa fa-at"></i> Address</label>
+      <input type="text" id="node-input-address" placeholder="127.0.0.1" />
+      <input type="hidden" id="node-input-addresstype" />
+    </div>
+    <div class="form-row">
+        <label for="node-input-port"><i class="fa">&#x3a;</i>  Port</label>
+        <input type="text" id="node-input-port" placeholder="8081" />
+        <input type="hidden" id="node-input-porttype" />
+    </div>
+    <hr />
+    <div>
+        <h2><label><i class="fa fa-cog"></i> Advanced</label></h2>
+    </div>
+    <div class="form-row">
+        <label for="node-input-timeOut"><i class="fa fa-clock-o"></i> Time out (ms)</label>
+        <input type="number" id="node-input-timeOut" placeholder="1500" />
+    </div>
+</script>
+
+<script type="text/html" data-help-name="haas-command">
+    <p>TODO</p>
+</script>
+
+<!-- DPRINT NODE -->
+<script type="text/javascript">
+
+    RED.nodes.registerType('haas-dprint', {
+        category: 'network',
+        color: '#cddc39',
+        defaults: {
+            name: { value: '' },
+            address: { value: '127.0.0.1', validate: RED.validators.typedInput('addresstype', false) },
+            addresstype: { value: 'str' },
+            port: { value: 8080, validate: RED.validators.typedInput('porttype', false) },
+            porttype: { value: 'num' },
+            timeOut: { value: 20000 },
+        },
+        inputs: 0,
+        outputs: 2,
+        icon: 'read.png',
+        label: function () {
+            return this.name || 'Haas DPRNT';
+        },
+        outputLabels: ['Message', 'Error'],
+        oneditprepare: function() {
+          $('#node-input-address').typedInput({
+              default: 'str',
+              typeField: $('#node-input-addresstype'),
+              types: ['flow','global','str']
+          });
+          $('#node-input-port').typedInput({
+              default: 'num',
+              typeField: $('#node-input-porttype'),
+              types: ['flow','global','num']
+          });
+        }
+    });
+</script>
+
+<script type="text/html" data-template-name="haas-dprint">
+    <div class="form-row">
+        <label for="node-input-name"><i class="icon-tag"></i> Name</label>
+        <input type="text" id="node-input-input-name" placeholder="Name" />
+    </div>
+    <div class="form-row">
+      <label for="node-input-address"><i class="fa fa-at"></i> Address</label>
+      <input type="text" id="node-input-address" placeholder="127.0.0.1" />
+      <input type="hidden" id="node-input-addresstype" />
+    </div>
+    <div class="form-row">
+        <label for="node-input-port"><i class="fa">&#x3a;</i>  Port</label>
+        <input type="text" id="node-input-port" placeholder="8080" />
+        <input type="hidden" id="node-input-porttype" />
+    </div>
+    <hr />
+    <div>
+        <h2><label><i class="fa fa-cog"></i> Advanced</label></h2>
+    </div>
+    <div class="form-row">
+        <label for="node-input-timeOut"><i class="fa fa-clock-o"></i> Time out (ms)</label>
+        <input type="number" id="node-input-timeOut" placeholder="20000" />
+    </div>
+</script>
+
+<script type="text/html" data-help-name="haas-dprint">
+    <p>TODO</p>
+</script>
