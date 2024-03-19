@@ -1,6 +1,4 @@
 module.exports = function(RED) {
-  const { Telnet } = require('telnet-client');
-
   const CONNECTION_STATUS = {
     DISCONNECTED : 0,
     CONNECTED : 1,
@@ -9,38 +7,69 @@ module.exports = function(RED) {
     ERROR : 4,
   };
 
-  class HaasConnection extends Telnet {
-    constructor(host, port, timeout) {
-      super();
+  const net = require('net');
+  const EventEmitter = require('events');
 
-      // Assign class variables
+  class TcpClient extends EventEmitter {
+    constructor(host, port, prompt='') {
+      super();
       this.host = host;
       this.port = port;
-      this.timeout = timeout;
-      this.connection_name = host + ':' + port;
+      this.prompt = prompt;
+      this.socket = new net.Socket();
       this.statusObservers = [];
       this.dataObservers = [];
       this.connecting = false;
       this.will_destroy = false;
       this.reconnect_timeout = null;
+      this.commandQueue = [];
+      this.isProcessing = false;
+      this.hasBeenInitialized = false;
 
-      // Attach event listeners
-      this.on('ready', prompt => {
-        console.log('[HAAS] Connected to', this.host, this.port);
-        this.broadcastStatus(CONNECTION_STATUS.CONNECTED);
+      this.socket.on('data', (data) => {
+        if (!this.hasBeenInitialized && data.toString().indexOf(this.prompt) > -1) {
+          console.log('[HAAS] Prompt detected.')
+          this.hasBeenInitialized = true;
+          return;
+        }
+        if (this.commandQueue.length) {
+          const { nodeId, command, callback } = this.commandQueue.shift();
+
+          // Format response
+          let dataStr = data.toString();
+          dataStr = dataStr.replace(/\r/gm, '');
+          let dataList = dataStr.split(/\n|>/gm);
+          dataList = dataList.filter((el) => {return el.length});
+          if (dataList.length == 0) callback(nodeId, null, {command: command, payload: ''});
+          else callback(nodeId, null, {command: command, payload: dataList[0]});
+
+          // Process next commands
+          this.isProcessing = false;
+          this.processQueue();
+        }
+        else {
+          let dataStr = data.toString().replace(/(\r\n|\n\r)*$/, '');
+          this.broadcastData(dataStr);
+        }
       });
-      this.on('timeout', () => {
-        console.log('[HAAS] Socket timeout with', this.host, this.port);
-        this.end();
-      });
-      this.on('close', () => {
-        let that = this;
+      this.socket.on('close', () => {
         console.log('[HAAS] Connection closed with', this.host, this.port);
         this.broadcastStatus(CONNECTION_STATUS.DISCONNECTED);
-        this.removeAllListeners('failedlogin');
+        this.removeAllListeners('connect');
+        this.socket.removeAllListeners('connect');
+        this.connecting = false;
+        this.hasBeenInitialized = true;
+        this.cmd_queue = [];
+
+        // Purge queued commands
+        while (this.commandQueue.length) {
+          const { nodeId, command, callback } = this.commandQueue.shift();
+          callback(nodeId, {command: command, error: 'Disconnected'}, null);
+        }
+        this.isProcessing = false;
 
         if (!this.will_destroy) {
-          // Try to reconnect to server
+          let that = this;
           this.reconnect_timeout = setTimeout(function() {
             if (!that) return;
             that.broadcastStatus(CONNECTION_STATUS.RECONNECTING);
@@ -48,43 +77,54 @@ module.exports = function(RED) {
           }, 1000);
         }
       });
-      this.on('data', data => {
-        this.broadcastData(data);
-      })
+      this.socket.on('error', (err) => {
+        console.log('[HAAS] Connection error with', this.host, this.port);
+        this.broadcastStatus(CONNECTION_STATUS.ERROR);
+      });
+      this.socket.on('timeout', (err) => {
+        console.error('Timeout error:', err);
+        this.emit('timeout', err);
+      });
     }
-
     connect() {
-      if (this.connecting || this.isConnected()) {
+      if (this.connecting) {
         console.log('[HAAS] Connection already in progress or established to', this.host, this.port);
         return;
       }
 
       this.connecting = true;
-      console.log('[HAAS] Try to connect to', this.host, this.port);
-      let that = this;
-      super.connect({
+      this.socket.connect({
         host: this.host,
         port: this.port,
-        shellPrompt: '>', // or negotiationMandatory: false
-        timeout: this.timeout
-      })
-      .then(() => {
-        this.connecting = false;
-      })
-      .catch(error => {
-        console.log('[HAAS] Failed to connect to', this.host, this.port);
-        that.broadcastStatus(CONNECTION_STATUS.ERROR);
-        this.connecting = false;
+        keepAlive : true
+      }, () => {
+        console.log('[HAAS] Connected to', this.host, this.port);
+        this.broadcastStatus(CONNECTION_STATUS.CONNECTED);
+      });
+    }
+    sendCommand(nodeId, command, callback) {
+      if (!this.socket || this.socket.destroyed) return callback(nodeId, {command: command, error: 'Not connected'}, null);
+      this.commandQueue.push({ nodeId, command, callback });
+      console.log('[HAAS] Command queued. Position:', this.commandQueue.length);
+      if (!this.isProcessing) this.processQueue();
+    }
+    processQueue() {
+      if (this.commandQueue.length === 0) {
+        this.isProcessing = false;
+        return;
+      }
+      this.isProcessing = true;
+      const { nodeId, command, callback } = this.commandQueue[0];
+
+      this.socket.write(command, () => {
+        console.log('[HAAS] Command sent:', command);
       });
     }
     kill() {
       console.log('[HAAS] Destroy connection to', this.host, this.port);
       clearTimeout(this.reconnect_timeout);
       this.will_destroy = true;
-      if (this.socket) this.destroy();
-    }
-    isConnected() {
-      return this.socket && !this.socket.destroyed;
+      this.socket.destroy();
     }
     subscribe(sfn, dfn) {
       if (!!sfn) this.statusObservers.push(sfn);
@@ -133,7 +173,6 @@ module.exports = function(RED) {
       // Compute values
       const address = RED.util.evaluateNodeProperty(config.address, config.addresstype, node);
       const port = RED.util.evaluateNodeProperty(config.port, config.porttype, node);
-      const timeOut = parseInt(config.timeOut);
       const uuid = address + ':' + port;
 
       if (address === undefined || port === undefined) {
@@ -146,7 +185,7 @@ module.exports = function(RED) {
       if (!context.haas_connections) context.haas_connections = {};
       if (!context.haas_connections[uuid]) {
         console.log('Cannot find previous connection. Create a new one');
-        context.haas_connections[uuid] = new HaasConnection(address, port, timeOut);
+        context.haas_connections[uuid] = new TcpClient(address, port, '>');
       }
       const HAAS = context.haas_connections[uuid];
 
@@ -216,7 +255,7 @@ module.exports = function(RED) {
       if (!context.haas_connections) context.haas_connections = {};
       if (!context.haas_connections[uuid]) {
         console.log('Cannot find previous connection. Create a new one');
-        context.haas_connections[uuid] = new HaasConnection(address, port, timeOut);
+        context.haas_connections[uuid] = new TcpClient(address, port, '>');
       }
       const HAAS = context.haas_connections[uuid];
 
@@ -239,16 +278,11 @@ module.exports = function(RED) {
 
       node.on('input', function(msg) {
         if (!msg.payload) return;
-        HAAS.exec(msg.payload, (err, response) => {
-          console.log(response, err);
-          if (!!err) node.send([response, null]);
+        HAAS.sendCommand(node.id, msg.payload, (nodeId, err, response) => {
+          if (nodeId !== node.id) return;
+          if (!err) return node.send([response, null]);
           else node.send([null, err]);
-        })
-        .catch(error => {
-          onHaasStatus(CONNECTION_STATUS.ERROR);
-          let msg = { payload : 'Not connected to HAAS server' };
-          node.send([null, msg]);
-        })
+        });
       });
 
       // Try to connect to server

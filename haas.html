@@ -76,15 +76,14 @@
             addresstype: { value: 'str' },
             port: { value: 8080, validate: RED.validators.typedInput('porttype', false) },
             porttype: { value: 'num' },
-            timeOut: { value: 20000 },
         },
         inputs: 0,
-        outputs: 2,
+        outputs: 1,
         icon: 'read.png',
         label: function () {
             return this.name || 'Haas DPRNT';
         },
-        outputLabels: ['Message', 'Error'],
+        outputLabels: ['Message'],
         oneditprepare: function() {
           $('#node-input-address').typedInput({
               default: 'str',
@@ -114,14 +113,6 @@
         <label for="node-input-port"><i class="fa">&#x3a;</i>  Port</label>
         <input type="text" id="node-input-port" placeholder="8080" />
         <input type="hidden" id="node-input-porttype" />
-    </div>
-    <hr />
-    <div>
-        <h2><label><i class="fa fa-cog"></i> Advanced</label></h2>
-    </div>
-    <div class="form-row">
-        <label for="node-input-timeOut"><i class="fa fa-clock-o"></i> Time out (ms)</label>
-        <input type="number" id="node-input-timeOut" placeholder="20000" />
     </div>
 </script>
 
